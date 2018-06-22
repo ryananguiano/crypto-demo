@@ -12,15 +12,15 @@ from Crypto.PublicKey import RSA
 from Crypto import Random
 
 
-def generate_key_pair(size: int=1024) -> typing.Tuple[bytes, bytes]:
+def generate_key_pair(size: int=1024) -> typing.Tuple[str, str]:
     """Generate a private/public RSA key pair"""
     key = RSA.generate(size)
-    private_key = key.exportKey()
-    public_key = key.publickey().exportKey()
+    private_key = key.exportKey().decode('ascii')
+    public_key = key.publickey().exportKey().decode('ascii')
     return private_key, public_key
 
 
-def load_key(key: bytes) -> RSA._RSAobj:
+def load_rsa_key(key: str) -> RSA._RSAobj:
     return RSA.importKey(key)
 
 
@@ -28,15 +28,15 @@ def generate_session_key(size: int=32) -> bytes:  # 32 bytes --> AES-256
     return Random.get_random_bytes(size)
 
 
-def encrypt_session_key(public_key: bytes, session_key: bytes) -> bytes:
-    key = load_key(public_key)
-    cipher_rsa = PKCS1_OAEP.new(key)
+def encrypt_session_key(public_key: str, session_key: bytes) -> bytes:
+    rsa_key = load_rsa_key(public_key)
+    cipher_rsa = PKCS1_OAEP.new(rsa_key)
     return cipher_rsa.encrypt(session_key)
 
 
-def decrypt_session_key(private_key: bytes, encrypted_key: bytes) -> bytes:
-    key = load_key(private_key)
-    cipher_rsa = PKCS1_OAEP.new(key)
+def decrypt_session_key(private_key: str, encrypted_key: bytes) -> bytes:
+    rsa_key = load_rsa_key(private_key)
+    cipher_rsa = PKCS1_OAEP.new(rsa_key)
     return cipher_rsa.decrypt(encrypted_key)
 
 
@@ -52,21 +52,29 @@ def decrypt_data(session_key: bytes, data: bytes) -> str:
     return cipher_aes.decrypt(data).decode('utf8')
 
 
-def encrypt_payload(public_key: bytes, data: str) -> typing.Mapping[str, str]:
+def to_base64(value: bytes) -> str:
+    return base64.b64encode(value).decode('ascii')
+
+
+def from_base64(value: str) -> bytes:
+    return base64.b64decode(value.encode('ascii'))
+
+
+def encrypt_payload(public_key: str, data: str) -> typing.Mapping[str, str]:
     """Generate and encrypt a session key, and return with the encrypted data"""
     session_key = generate_session_key()
     encrypted_key = encrypt_session_key(public_key, session_key)
     encrypted_data = encrypt_data(session_key, data)
     return {
-        'key': base64.b64encode(encrypted_key).decode('utf8'),
-        'payload': base64.b64encode(encrypted_data).decode('utf8'),
+        'key': to_base64(encrypted_key),
+        'payload': to_base64(encrypted_data),
     }
 
 
-def decrypt_payload(private_key: bytes, payload: typing.Mapping[str, str]) -> str:
+def decrypt_payload(private_key: str, payload: typing.Mapping[str, str]) -> str:
     """Decrypt the session key, then decrypt the payload and return the data"""
-    encrypted_key = base64.b64decode(payload['key'])
-    encrypted_data = base64.b64decode(payload['payload'])
+    encrypted_key = from_base64(payload['key'])
+    encrypted_data = from_base64(payload['payload'])
     session_key = decrypt_session_key(private_key, encrypted_key)
     return decrypt_data(session_key, encrypted_data)
 
@@ -76,9 +84,9 @@ if __name__ == '__main__':
     private_key, public_key = generate_key_pair()
     
     print('\nPrivate Key:')
-    print(private_key.decode('utf8'))
+    print(private_key)
     print('\nPublic Key:')
-    print(public_key.decode('utf8'))
+    print(public_key)
     
     data = '{"foo":"bar","success":true}'
     
