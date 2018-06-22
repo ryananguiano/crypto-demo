@@ -86,9 +86,9 @@ if __name__ == '__main__':
     print(f'\nPrivate Key:\n{private_key}')
     print(f'\nPublic Key:\n{public_key}')
 
-    data = '{"foo":"bar","success":true}'
-    payload = encrypt_payload(public_key, data)
+    data = 'This is a secret. ' * 10
 
+    payload = encrypt_payload(public_key, data)
     print(f'\nPayload:\n{payload}')
 
     decrypted = decrypt_payload(private_key, payload)
