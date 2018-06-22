@@ -82,18 +82,14 @@ def decrypt_payload(private_key: str, payload: typing.Mapping[str, str]) -> str:
 if __name__ == '__main__':
     print('Generating RSA Key Pair')
     private_key, public_key = generate_key_pair()
-    
-    print('\nPrivate Key:')
-    print(private_key)
-    print('\nPublic Key:')
-    print(public_key)
-    
+
+    print(f'\nPrivate Key:\n{private_key}')
+    print(f'\nPublic Key:\n{public_key}')
+
     data = '{"foo":"bar","success":true}'
-    
     payload = encrypt_payload(public_key, data)
-    
-    print('\nPayload:')
-    print(payload)
-    
-    print('\nDecrypted Data:')
-    print(decrypt_payload(private_key, payload))
+
+    print(f'\nPayload:\n{payload}')
+
+    decrypted = decrypt_payload(private_key, payload)
+    print(f'\nDecrypted Data:\n{decrypted}')
